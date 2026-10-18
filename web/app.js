@@ -26,8 +26,8 @@ const S = {
 let clockOffset = 0;
 const serverNow = () => Date.now() + clockOffset;
 let mediaRecv = performance.now();
-let pausedAt = 0;
-let mode = store.get('mode') || 'auto';
+let pausedAt = -Infinity;
+let mode = new URLSearchParams(location.search).get('view') || store.get('mode') || 'auto'; // ?view=bot|clock|media pins a screen
 let shownView = null;
 let connected = false;
 let rtt = null;
@@ -85,6 +85,7 @@ function onMessage(m) {
     Object.assign(S, m.state);
     clockOffset = m.now - Date.now();
     mediaRecv = performance.now();
+    if (S.media && !S.media.playing) pausedAt = performance.now(); // paused media on connect: show controls briefly
     if (JSON.stringify(S.config) !== prevCfg) fetchWeather();
     renderMediaMeta(true);
     renderVolume();
@@ -104,6 +105,8 @@ function onMessage(m) {
       clockOffset = m.now - (Date.now() - rtt / 2);
     }
     renderStatus();
+  } else if (m.t === 'reload') {
+    setTimeout(() => location.reload(), 300);
   } else if (m.t === 'k') {
     keyTimes.push(performance.now());
     bot.onKey();
@@ -199,7 +202,7 @@ function botState() {
 
 function autoView() {
   const m = S.media;
-  if (m && (m.playing || performance.now() - pausedAt < 25000)) return 'media';
+  if (m && (m.playing || performance.now() - pausedAt < 120000)) return 'media';
   if (idleState() === 'sleep') return 'clock';
   return 'bot';
 }
@@ -213,6 +216,7 @@ function applyView(v) {
   shownView = v;
   document.body.dataset.view = v;
   bot.setView(v, first);
+  renderMini();
   if (v === 'media') requestAnimationFrame(() => viz.resize(dpr()));
 }
 
@@ -380,10 +384,21 @@ function renderCalendar() {
 // ------------------------------------------------------------------ media
 
 let artUrl = null;
+function renderMini() {
+  const m = S.media;
+  const show = !!m && shownView !== 'media';
+  $('#mini').classList.toggle('hidden', !show);
+  document.body.classList.toggle('has-mini', show);
+  if (!m) return;
+  $('#mini-title').textContent = m.title;
+  $('#mini-sub').textContent = [m.playing ? 'Playing' : 'Paused', m.artist, m.app].filter(Boolean).join(' · ');
+}
+
 function renderMediaMeta(full) {
   const m = S.media;
   document.body.classList.toggle('playing', !!(m && m.playing));
   $('#v-media').classList.toggle('playing', !!(m && m.playing));
+  renderMini();
   if (!full) return;
   $('#m-title').textContent = m ? m.title : 'Nothing playing';
   $('#m-artist').textContent = m ? m.artist || m.album : '';
@@ -499,6 +514,16 @@ document.querySelectorAll('[data-act]').forEach((b) => {
   b.addEventListener('pointerup', up);
   b.addEventListener('pointercancel', up);
   b.addEventListener('pointerleave', up);
+});
+
+$('#mini').addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  const el = $('#mini');
+  el.classList.add('down');
+  setTimeout(() => el.classList.remove('down'), 120);
+  mode = 'media';
+  store.set('mode', mode);
+  renderDock();
 });
 
 function slider(el, onMove, onEnd) {

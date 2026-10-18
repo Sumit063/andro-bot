@@ -171,6 +171,16 @@ body[data-view="bot"] #v-bot, body[data-view="clock"] #v-clock, body[data-view="
 .claude.done { background: rgba(60, 230, 140, .12); border-color: rgba(60, 230, 140, .35); color: #9FF5C8; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes nudge { 50% { transform: translateY(-4px); } }
+/* mini player: always-reachable controls when something is playing or paused */
+.mini { position: absolute; right: calc(var(--u) * 3.4); bottom: calc(var(--u) * 3); display: flex; align-items: center; gap: calc(var(--u) * 1.2); max-width: calc(var(--u) * 34); padding: calc(var(--u) * .7) calc(var(--u) * 1.6) calc(var(--u) * .7) calc(var(--u) * .7); border-radius: 999px; background: rgba(16, 20, 34, .92); border: 1px solid var(--line); transition: transform .12s var(--ease); }
+.mini.down { transform: scale(.97); }
+.mini .mini-pp { width: calc(var(--u) * 4.6); height: calc(var(--u) * 4.6); background: #fff; color: #05070D; flex: none; }
+.mini .mini-pp svg { width: 46%; height: 46%; }
+.mini-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.mini-txt b { font-size: calc(var(--u) * 1.7); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-txt span { font-size: calc(var(--u) * 1.35); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-open { width: calc(var(--u) * 2.4); height: calc(var(--u) * 2.4); color: var(--muted); flex: none; }
+body.has-mini:not([data-view="media"]) .claude { bottom: calc(var(--u) * 10); }
 body[data-view="media"] .claude { bottom: auto; top: calc(var(--u) * 2); right: calc(var(--u) * 20); }
 
 .dock { position: absolute; left: 50%; bottom: calc(var(--u) * 2); transform: translate(-50%, 30px); opacity: 0; transition: opacity .3s var(--ease), transform .3s var(--ease); pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1); }

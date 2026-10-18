@@ -202,9 +202,18 @@ class Hub:
             self.config_mtime = os.path.getmtime(CONFIG_PATH) if os.path.exists(CONFIG_PATH) else 0
             return False
 
+    @staticmethod
+    def web_version():
+        return max((os.path.getmtime(os.path.join(d, f)) for d, _, fs in os.walk(WEB) for f in fs), default=0)
+
     async def config_loop(self):
+        web_v = self.web_version()
         while True:
             await asyncio.sleep(2)
+            v = self.web_version()
+            if v != web_v:  # app files edited → tablets reload themselves
+                web_v = v
+                self.broadcast({"t": "reload"})
             if self.load_config():
                 self.patch("config", self.public_config())
                 self.recompute_activity()
