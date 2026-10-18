@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070D">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<title>Command Center</title>
+<link rel="preload" href="fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-view="bot" data-bg="default">
+
+<div id="bg">
+  <div data-s="default"></div><div data-s="surf"></div><div data-s="focus"></div><div data-s="funtime"></div>
+  <div data-s="code"></div><div data-s="music"></div><div data-s="chat"></div><div data-s="sleep"></div>
+  <div data-s="media"></div>
+</div>
+
+<main>
+  <!-- BOT -->
+  <section id="v-bot" class="view">
+    <div class="b-time"><div><span id="b-hm">--:--</span><span id="b-ampm" class="ampm"></span></div><div id="b-date" class="muted"></div></div>
+    <div id="b-weather" class="chip weather-chip hidden"></div>
+    <div id="banner" class="banner">
+      <div class="b-head"><span id="b-head"></span><span id="b-badge" class="badge hidden"><i></i>ON</span></div>
+      <div id="b-sub" class="b-sub"></div>
+    </div>
+    <div class="b-stats" id="b-stats"></div>
+  </section>
+
+  <!-- CLOCK -->
+  <section id="v-clock" class="view">
+    <div class="c-main">
+      <div class="c-time"><span id="c-hm"></span><span id="c-ampm" class="c-ampm"></span></div>
+      <div class="c-sec"><i id="c-sec"></i></div>
+      <div id="c-date" class="c-date"></div>
+    </div>
+    <div class="c-side">
+      <div id="c-weather" class="card hidden"></div>
+      <div id="c-cal" class="card hidden"></div>
+    </div>
+  </section>
+
+  <!-- MEDIA -->
+  <section id="v-media" class="view">
+    <div class="m-left">
+      <div id="m-artwrap" class="m-art empty"><img id="m-art" alt=""><div class="m-art-ph">♪</div></div>
+      <div class="m-meta">
+        <div id="m-app" class="m-app"></div>
+        <div id="m-title" class="m-title"></div>
+        <div id="m-artist" class="m-artist"></div>
+      </div>
+      <div class="m-progress">
+        <div id="m-bar" class="bar"><div id="m-fill" class="fill"></div><div id="m-knob" class="knob"></div></div>
+        <div class="times"><span id="m-el">0:00</span><span id="m-dur">0:00</span></div>
+      </div>
+      <div class="m-controls">
+        <button class="ctl" data-act="prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2.4v14H6zM19.5 5.4v13.2L9.6 12z"/></svg></button>
+        <button class="ctl" data-act="back" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M12 4.5V1.8L7.2 5.6 12 9.4V6.6a6.4 6.4 0 1 1-6.4 6.4H3.5A8.5 8.5 0 1 0 12 4.5z"/><text x="12" y="16.2">10</text></svg></button>
+        <button class="ctl play" data-act="toggle" aria-label="Play or pause">
+          <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24"><path d="M6.8 5h3.8v14H6.8zM13.4 5h3.8v14h-3.8z"/></svg>
+        </button>
+        <button class="ctl" data-act="fwd" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M12 4.5V1.8l4.8 3.8L12 9.4V6.6a6.4 6.4 0 1 0 6.4 6.4h2.1A8.5 8.5 0 1 1 12 4.5z"/><text x="12" y="16.2">10</text></svg></button>
+        <button class="ctl" data-act="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M15.6 5H18v14h-2.4zM4.5 5.4v13.2l9.9-6.6z"/></svg></button>
+      </div>
+      <div class="m-volume">
+        <button class="vol-ic" data-act="mute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <div id="m-vol" class="bar vol"><div class="fill"></div><div class="knob"></div></div>
+      </div>
+    </div>
+    <div class="m-right"><canvas id="viz"></canvas><div id="viz-hint" class="viz-hint"></div></div>
+  </section>
+</main>
+
+<canvas id="bot"></canvas>
+
+<div id="overlay">
+  <div id="conn" class="conn hidden"><i></i>Connecting to your Mac…</div>
+  <div id="toast" class="toast"></div>
+  <div id="claude" class="claude hidden"></div>
+  <div id="dock" class="dock">
+    <div id="hints" class="hints"></div>
+    <div class="dock-row">
+      <button data-mode="auto" aria-label="Auto"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg><span>Auto</span></button>
+      <button data-mode="bot" aria-label="Bot"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="5"/><circle cx="9.5" cy="12" r="1.6" fill="#05070D"/><circle cx="14.5" cy="12" r="1.6" fill="#05070D"/><path d="M12 6V3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Bot</span></button>
+      <button data-mode="clock" aria-label="Clock"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>Clock</span></button>
+      <button data-mode="media" aria-label="Media"><svg viewBox="0 0 24 24"><path d="M4 14h2v6H4zM9 9h2v11H9zM14 4h2v16h-2zM19 11h2v9h-2z"/></svg><span>Media</span></button>
+      <div id="status" class="status"><i></i><span></span></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

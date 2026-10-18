@@ -1,0 +1,8 @@
+# personal settings (copy config.example.json → config.json)
+config.json
+# build output & runtime
+bin/
+logs/
+*.log
+.DS_Store
+__pycache__/

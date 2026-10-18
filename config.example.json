@@ -1,0 +1,32 @@
+{
+  "name": "friend",
+  "location": { "name": "London", "lat": 51.5072, "lon": -0.1276 },
+  "clock24": false,
+  "calendar": true,
+  "idle": { "bored": 90, "sleep": 300 },
+
+  "rules": [
+    { "sites": ["leetcode.com", "leetcode.cn"], "scene": "focus", "label": "LeetCode" },
+    { "sites": ["codeforces.com"], "scene": "focus", "label": "Codeforces" },
+    { "sites": ["hackerrank.com"], "scene": "focus", "label": "HackerRank" },
+    { "sites": ["geeksforgeeks.org"], "scene": "focus", "label": "GeeksforGeeks" },
+    { "sites": ["codechef.com"], "scene": "focus", "label": "CodeChef" },
+
+    { "sites": ["music.youtube.com"], "scene": "music", "label": "YouTube Music" },
+    { "sites": ["open.spotify.com"], "scene": "music", "label": "Spotify" },
+
+    { "sites": ["youtube.com", "youtu.be"], "scene": "funtime", "label": "YouTube" },
+    { "sites": ["netflix.com"], "scene": "funtime", "label": "Netflix" },
+    { "sites": ["hotstar.com"], "scene": "funtime", "label": "JioHotstar" },
+    { "sites": ["primevideo.com"], "urls": ["amazon.in/gp/video", "amazon.com/gp/video"], "scene": "funtime", "label": "Prime Video" },
+
+    { "sites": ["github.com", "stackoverflow.com", "localhost"], "scene": "code" },
+    { "sites": ["web.whatsapp.com", "discord.com", "app.slack.com", "web.telegram.org"], "scene": "chat" },
+
+    { "apps": ["Spotify", "Music"], "scene": "music" },
+    { "apps": ["Code", "Visual Studio Code", "Cursor", "Xcode", "Terminal", "iTerm2", "Warp", "Ghostty", "Zed",
+               "IntelliJ IDEA", "PyCharm", "WebStorm", "Android Studio", "Sublime Text"], "scene": "code" },
+    { "apps": ["WhatsApp", "Telegram", "Slack", "Discord", "Messages"], "scene": "chat" },
+    { "apps": ["Google Chrome", "Safari", "Arc", "Brave Browser", "Microsoft Edge", "Firefox"], "scene": "surf" }
+  ]
+}
