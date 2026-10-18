@@ -172,7 +172,7 @@ class Hub:
         }
 
     def public_config(self):
-        return {k: self.config.get(k) for k in ("name", "location", "clock24", "idle", "dpr")}
+        return {k: self.config.get(k) for k in ("name", "location", "clock24", "idle", "dpr", "quietHours", "sound", "mic")}
 
     def broadcast(self, obj):
         for c in list(self.clients):

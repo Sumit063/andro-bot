@@ -8,6 +8,8 @@ Turn any spare Android tablet (or any device with a modern browser) into a live 
 - **A media panel** for whatever is playing on the Mac (YouTube in a browser, Spotify, Apple Music…)
   with artwork, a seek bar, play/pause/skip, volume, and an animated equalizer (optionally driven by the Mac's real audio).
 - **A clock** with local weather, air quality and your next calendar event.
+- **Sounds and ears on the tablet**: little synthesized chimes for its reactions, and (optionally) it
+  listens through the tablet mic. Shout near it and it turns red, wags a finger and says *"No shouting!"*.
 
 Everything runs on your own network. Nothing to install on the tablet; it's a web app.
 
@@ -67,6 +69,9 @@ Changes are picked up within 2 seconds, no restart needed.
   "clock24": false,
   "calendar": true,
   "liveAudio": false,                                 // real-audio equalizer (see note below)
+  "quietHours": [23, 8],                              // no sounds and no listening 23:00–08:00
+  "sound": { "volume": 0.6 },                         // 0–1
+  "mic": { "sensitivity": 0.5 },                      // 0 = only very loud, 1 = easily annoyed
   "idle": { "bored": 90, "sleep": 300 },              // seconds
   "rules": [                                          // first match wins
     { "sites": ["leetcode.com"], "scene": "focus", "label": "LeetCode" },
@@ -86,6 +91,28 @@ Changes are picked up within 2 seconds, no restart needed.
   recording indicator, and DRM video (Netflix, Prime Video, Disney+/Hotstar…) plays black while it's on.
   With it off, the equalizer animates on its own while something plays and media controls work the same.
 
+## Sounds & the "NO SHOUTING!" mic (tablet)
+
+Sounds are generated on the tablet (no audio files). Browsers keep audio locked until you touch the
+page, so after opening or reloading it, **tap once**; a hint says so while it's locked.
+
+The mic is optional and needs one browser setting, because Chrome only allows the microphone on
+`https://` pages:
+
+1. On the tablet open `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+2. Enter your hub's address, e.g. `http://192.168.1.20:8765`, set it to **Enabled**, relaunch Chrome
+3. Open the page, tap once, and allow the microphone when asked
+
+How it decides someone is shouting: it measures loudness and how voice-like the sound is, learns
+your room's normal noise level, and only reacts to voice-range sound that stays loud for about half a
+second (claps and door slams are ignored). It is less sensitive while the Mac is playing media,
+ignores its own sounds, and won't react more than once every 40 s. **Audio is analysed in memory
+only; nothing is recorded, stored or sent.** Android shows its green mic indicator while listening.
+
+Tap the dock to switch **Sound** and **Mic** on or off. While the mic is on, the dock shows a live
+meter: green is the room level, the red mark is the shouting threshold. Use it to tune
+`mic.sensitivity`. Preview the reaction with `?demo=shout`.
+
 ## Using it
 
 - **Tap** anywhere → dock: *Auto · Bot · Clock · Media* (Auto switches by itself) plus the live latency.
@@ -93,7 +120,8 @@ Changes are picked up within 2 seconds, no restart needed.
 - **Tap the bot** → it giggles; tap 4× fast → it spins.
 - **Tap the equalizer** → cycle bars / wave / ring.
 - **Preview any scene** without switching apps: `http://<mac-ip>:8765/?demo=focus`
-  (`surf`, `funtime`, `code`, `music`, `chat`, `sleep`, `media`).
+  (`surf`, `funtime`, `code`, `music`, `chat`, `sleep`, `media`, `shout`).
+- **Pin a screen**: `?view=bot`, `?view=clock` or `?view=media`.
 
 ### Claude Code integration (optional)
 

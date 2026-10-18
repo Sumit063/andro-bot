@@ -53,6 +53,11 @@ permission or crash in one sensor never takes the hub down.
   transition blends smoothly. Scene props (surfboard + waves, headband, 3D glasses + popcorn,
   laptop, headphones, bubbles) fade in by per-scene presence springs. Plain Canvas 2D, no blur or
   shadows, for budget tablet GPUs.
+- `sound.js`: synthesized effects (Web Audio oscillators, no files) and the robot voice
+  (`speechSynthesis`); honours volume, mute and quiet hours, and tells the mic when it is making noise.
+- `ears.js`: optional shouting detector. `getUserMedia` → `AnalyserNode` every 50 ms: loudness
+  (dBFS), share of energy in the voice band (250–3500 Hz), an adaptive room noise floor, and a
+  ~0.5 s sustain requirement. Raises its threshold while the Mac plays media; 40 s cooldown.
 - `viz.js`: equalizer. Fast-attack/slow-release smoothing, falling peak caps, three styles; a
   synthetic groove stands in when no live audio arrives.
 

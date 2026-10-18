@@ -47,6 +47,8 @@ const MOODS = {
   think: { lid: 0.18, happy: 0, smile: 0.1, mouthO: 0 },
   surprise: { open: 1, eyeW: 1.18, eyeH: 1.28, happy: 0, lid: 0, lidAng: 0, mouthO: 0.65, smile: 0 },
   love: { open: 1, happy: 1, smile: 1, mouthO: 0.3, blush: 1, lid: 0, lidAng: 0 },
+  angry: { open: 1, eyeW: 1.05, eyeH: 0.95, happy: 0, lid: 0.32, lidAng: 0.42, smile: -0.7, mouthO: 0.55, blush: 0, color: 'red' },
+  grumpy: { open: 1, happy: 0, lid: 0.25, lidAng: 0.25, smile: -0.35, mouthO: 0, blush: 0, color: 'orange' },
 };
 
 // Per-scene defaults: mood, where the eyes rest, arm angles (+ = out, − = across body), belly glyph.
@@ -85,7 +87,7 @@ export class Bot {
       X: S(0, 60, 0.95), Y: S(0, 60, 0.95), Sc: S(1, 60, 0.95), vb: S(1, 40, 1),
     };
     this.pres = {};
-    for (const k of [...Object.keys(SCENES), 'think', 'attention', 'stress']) this.pres[k] = new Spring(0, 50, 1);
+    for (const k of [...Object.keys(SCENES), 'think', 'attention', 'stress', 'shout']) this.pres[k] = new Spring(0, 50, 1);
     this.pres.default.snap(1);
     this.parts = [];
     this.t = 0;
@@ -98,6 +100,8 @@ export class Bot {
     this.exprQueue = [];
     this.waveUntil = 0;
     this.cheerUntil = 0;
+    this.shoutUntil = 0;
+    this.shake = 0;
     this.spinAt = -9;
     this.chompAt = -9;
     this.pokes = [];
@@ -217,7 +221,19 @@ export class Bot {
     }
   }
 
+  // Loud noise in the room: red eyes, wagging finger, "NO SHOUTING!", then a grumpy cool-down.
+  angry() {
+    const sp = this.sp;
+    this.shoutUntil = this.t + 3.2;
+    this.shake = 1;
+    sp.hop.v += 220;
+    sp.ant.v += 8;
+    this.express('angry', 3.2);
+    this.exprQueue = [['grumpy', 4]];
+  }
+
   express(name, dur) {
+    if (this.t < this.shoutUntil && name !== 'angry') return; // nothing interrupts a telling-off
     this.expr = name;
     this.exprUntil = this.t + dur;
   }
@@ -251,7 +267,10 @@ export class Bot {
     const sc = SCENES[scene];
 
     for (const k in SCENES) this.pres[k].t = k === scene ? 1 : 0;
-    this.pres.think.t = st.claude === 'thinking' && scene !== 'sleep' ? 1 : 0;
+    const shouting = t < this.shoutUntil;
+    this.pres.shout.t = shouting ? 1 : 0;
+    this.pres.think.t = st.claude === 'thinking' && scene !== 'sleep' && !shouting ? 1 : 0;
+    this.shake *= Math.exp(-dt * 1.4);
     this.pres.attention.t = st.claude === 'attention' ? 1 : 0;
     this.pres.stress.t = st.stress && scene !== 'sleep' ? 1 : 0;
 
@@ -312,6 +331,10 @@ export class Bot {
     }
     if (scene === 'chat') aR = 0.6 + Math.sin(t * 3.2) * 0.35;
     if (t < this.waveUntil || this.pres.attention.t > 0.5) aR = 2.55 + Math.sin(t * 13) * 0.35;
+    if (shouting) {
+      aR = 2.45 + Math.sin(t * 16) * 0.28; // wagging finger
+      aL = -0.35;
+    }
     if (t < this.cheerUntil) {
       aL = 2.3 + Math.sin(t * 10) * 0.2;
       aR = 2.3 + Math.sin(t * 10 + 1) * 0.2;
@@ -438,7 +461,7 @@ export class Bot {
 
     const spin = t - this.spinAt < 0.9 ? ease((t - this.spinAt) / 0.9) * TAU : 0;
     ctx.save();
-    ctx.translate(X, Y - sp.hop.x * s + (1 - surf) * Math.sin(t * 1.7) * 5 * s);
+    ctx.translate(X + Math.sin(t * 55) * 6 * this.shake * s, Y - sp.hop.x * s + (1 - surf) * Math.sin(t * 1.7) * 5 * s);
     ctx.scale(s, s);
     ctx.rotate(rot + spin);
     const sq = clamp(sp.sq.x, -0.6, 0.6) * 0.25;
@@ -531,7 +554,7 @@ export class Bot {
     ctx.fill();
     this.drawBelly(col);
     this.drawArm(-1, sp.armL.x);
-    this.drawArm(1, sp.armR.x);
+    this.drawArm(1, sp.armR.x, this.pres.shout.x);
 
     // head
     ctx.save();
@@ -543,7 +566,8 @@ export class Bot {
     if (p('code') > 0.01) this.drawLaptop(p('code'), col);
     if (p('funtime') > 0.01) this.drawPopcorn(p('funtime'));
     if (p('think') > 0.01) this.drawBubble(p('think'), 'think');
-    if (p('attention') > 0.01) this.drawBubble(p('attention'), 'attention');
+    if (p('attention') > 0.01 && p('shout') < 0.5) this.drawBubble(p('attention'), 'attention');
+    if (p('shout') > 0.01) this.drawShout(p('shout'));
     this.drawParticles(col);
   }
 
@@ -566,7 +590,7 @@ export class Bot {
     ctx.fillText(glyph, 0, BODY_Y + 2);
   }
 
-  drawArm(side, ang) {
+  drawArm(side, ang, finger = 0) {
     const { ctx } = this;
     ctx.save();
     ctx.translate(side * 66, BODY_Y - 28);
@@ -576,6 +600,11 @@ export class Bot {
     ctx.roundRect(-12, -6, 24, 62, 12);
     ctx.fill();
     ctx.fillStyle = '#F8FAFD';
+    if (finger > 0.02) {
+      ctx.beginPath();
+      ctx.roundRect(-5, 58, 10, 30 * finger, 5);
+      ctx.fill();
+    }
     ctx.beginPath();
     ctx.arc(0, 56, 13, 0, TAU);
     ctx.fill();
@@ -974,6 +1003,29 @@ export class Bot {
       ctx.font = '800 38px Outfit, system-ui, sans-serif';
       ctx.fillText('!', cx, cy + 2 - Math.abs(Math.sin(t * 6)) * 5);
     }
+    ctx.restore();
+  }
+
+  drawShout(a) {
+    const { ctx, t } = this;
+    const side = this.view === 'media' ? -1 : 1;
+    const cx = side * 170, cy = -240 + Math.sin(t * 20) * 2;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, a * 1.5);
+    ctx.translate(cx, cy);
+    ctx.scale(0.6 + 0.4 * a, 0.6 + 0.4 * a);
+    ctx.fillStyle = '#E8384F';
+    for (const [x, y, r] of [[-side * 70, 52, 9], [-side * 98, 76, 6]]) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.roundRect(-128, -36, 256, 72, 36);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '800 30px Outfit, system-ui, sans-serif';
+    ctx.fillText('NO SHOUTING!', 0, 2);
     ctx.restore();
   }
 

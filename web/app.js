@@ -3,6 +3,8 @@
 
 import { Bot } from './bot.js';
 import { Viz } from './viz.js';
+import { Sound, inQuietHours } from './sound.js';
+import { Ears } from './ears.js';
 
 const $ = (s) => document.querySelector(s);
 const pad = (n) => String(n).padStart(2, '0');
@@ -38,6 +40,23 @@ const bot = new Bot($('#bot'));
 const viz = new Viz($('#viz'));
 viz.style = store.get('vizStyle') || 'bars';
 viz.onBeat = (lvl) => bot.onBeat(lvl);
+const sound = new Sound();
+const ears = new Ears(sound);
+let soundOn = store.get('sound') !== '0';
+let micOn = store.get('mic') !== '0';
+let angryViewUntil = 0;
+
+// Someone shouted near the tablet: the bot takes over the screen for a moment and tells them off.
+ears.onShout = () => {
+  bot.angry();
+  sound.play('buzz');
+  setTimeout(() => sound.speak('No shouting!'), 300);
+  angryViewUntil = performance.now() + 6000;
+  document.body.classList.remove('angry');
+  void document.body.offsetWidth;
+  document.body.classList.add('angry');
+  setTimeout(() => document.body.classList.remove('angry'), 3200);
+};
 
 // ------------------------------------------------------------------ connection
 
@@ -92,6 +111,7 @@ function onMessage(m) {
     renderPerms();
     renderCalendar();
     renderClaude(null);
+    renderBanner(botState()); // greet by name as soon as settings arrive
   } else if (m.t === 'patch') {
     const prev = S[m.k];
     S[m.k] = m.v;
@@ -122,12 +142,14 @@ function onPatch(k, prev) {
     const c = idleCfg();
     if (prev >= c.sleep && S.idle < 5) {
       bot.react('wake');
+      sound.play('wake');
       toast(`👋 Welcome back, ${S.config.name || 'friend'}!`);
     }
   } else if (k === 'sys') {
     const wasCharging = prev && prev.batt && prev.batt.plugged;
     if (S.sys.batt && S.sys.batt.plugged && prev && prev.batt && !wasCharging) {
       bot.react('charge');
+      sound.play('zap');
       toast('⚡ Charging');
     }
   } else if (k === 'claude') renderClaude(prev);
@@ -176,7 +198,8 @@ if (demo === 'media') {
   fake();
   setInterval(fake, 200);
 }
-const activity = () => (demo && demo !== 'media'
+if (demo === 'shout') { ears.onShout(); setInterval(() => ears.onShout(), 9000); } // preview the "NO SHOUTING!" reaction
+const activity = () => (demo && demo !== 'media' && demo !== 'shout'
   ? { scene: demo, label: DEMO_LABELS[demo] || '', app: 'Demo', host: demo === 'surf' ? 'github.com' : '', since: demoSince + clockOffset }
   : S.activity || {});
 
@@ -207,7 +230,10 @@ function autoView() {
   return 'bot';
 }
 
-const currentView = () => (mode === 'auto' ? autoView() : mode === 'media' && !S.media ? 'bot' : mode);
+const currentView = () => {
+  if (performance.now() < angryViewUntil) return 'bot';
+  return mode === 'auto' ? autoView() : mode === 'media' && !S.media ? 'bot' : mode;
+};
 
 // ------------------------------------------------------------------ views
 
@@ -378,6 +404,7 @@ function renderCalendar() {
     remindedEvents.add(key);
     toast(`⏰ ${e.title} in ${mins} min`);
     bot.react('greet');
+    sound.play('chime');
   }
 }
 
@@ -507,7 +534,9 @@ document.querySelectorAll('[data-act]').forEach((b) => {
   b.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     b.classList.add('down');
+    sound.unlock();
     actions[b.dataset.act]();
+    sound.play('tap');
     showDock(false);
   });
   const up = () => b.classList.remove('down');
@@ -607,11 +636,17 @@ function renderClaude(prev) {
   } else if (c.state === 'attention') {
     el.classList.add('attention');
     el.innerHTML = '<span>✋</span><span>Claude needs you</span>';
-    if (prev && prev.state !== 'attention') bot.react('greet');
+    if (prev && prev.state !== 'attention') {
+      bot.react('greet');
+      sound.play('ping');
+    }
   } else if (c.state === 'done' && serverNow() - c.since < 10000) {
     el.classList.add('done');
     el.innerHTML = '<span>✓</span><span>Claude finished</span>';
-    if (prev && prev.state === 'thinking') bot.react('celebrate');
+    if (prev && prev.state === 'thinking') {
+      bot.react('celebrate');
+      sound.play('tada');
+    }
     claudeTimer = setTimeout(() => el.classList.add('hidden'), 8000);
   } else {
     el.classList.add('hidden');
@@ -663,7 +698,73 @@ function renderPerms() {
   if (p.url === false) hints.push('🌐 Allow Terminal to control your browser (Automation) for site reactions');
   if (p.keys === false) hints.push('⌨ Allow Terminal in Input Monitoring for typing reactions');
   if (p.media === false) hints.push('🎵 Install media-control on the Mac');
+  if (micOn && ears.error === 'insecure') hints.push('🎤 Mic needs the Chrome flag "Insecure origins treated as secure" for this address');
+  if (micOn && ears.error === 'denied') hints.push('🎤 Mic blocked: allow it in Chrome → Site settings for this address');
   $('#hints').innerHTML = hints.map((h) => `<div>${h}</div>`).join('');
+}
+
+// ------------------------------------------------------------------ sound & mic
+
+function renderToggles() {
+  document.querySelector('[data-toggle="sound"]').classList.toggle('on', soundOn);
+  document.querySelector('[data-toggle="mic"]').classList.toggle('on', micOn);
+}
+
+document.querySelectorAll('.dock [data-toggle]').forEach((b) => {
+  b.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    sound.unlock();
+    if (b.dataset.toggle === 'sound') {
+      soundOn = !soundOn;
+      store.set('sound', soundOn ? '1' : '0');
+    } else {
+      micOn = !micOn;
+      store.set('mic', micOn ? '1' : '0');
+    }
+    renderToggles();
+    syncAudio();
+    sound.play('tap');
+    showDock(false);
+  });
+});
+
+// Applies config + toggles: volume, quiet hours, and whether the mic should be listening.
+function syncAudio() {
+  const cfg = S.config || {};
+  const quiet = cfg.quietHours || null;
+  sound.enabled = soundOn;
+  sound.volume = (cfg.sound && cfg.sound.volume) != null ? cfg.sound.volume : 0.6;
+  sound.quietHours = quiet;
+  ears.sensitivity = (cfg.mic && cfg.mic.sensitivity) != null ? cfg.mic.sensitivity : 0.5;
+  ears.strict = !!(S.media && S.media.playing);
+  const listen = micOn && sound.ready && !inQuietHours(quiet) && !document.hidden;
+  if (listen && !ears.active) ears.start().then(renderPerms);
+  else if (!listen && ears.active) ears.stop();
+  $('#wakehint').classList.toggle('hidden', sound.ready || !(soundOn || micOn));
+}
+
+function renderMeter() {
+  const btn = document.querySelector('[data-toggle="mic"]');
+  btn.classList.toggle('live', ears.active);
+  if (!ears.active) return;
+  const pos = (db) => Math.min(1, Math.max(0, (db + 70) / 70));
+  const m = $('#meter');
+  m.querySelector('b').style.transform = `scaleX(${pos(ears.level)})`;
+  m.querySelector('em').style.left = `${pos(ears.threshold) * 100}%`;
+}
+
+let lastScene = null, lastBlip = 0;
+function sceneSounds(scene) {
+  if (scene === lastScene) return;
+  const prev = lastScene;
+  lastScene = scene;
+  if (prev === null || prev === 'sleep') return; // first frame / waking up has its own sound
+  if (scene === 'sleep') sound.play('yawn');
+  else if (scene === 'focus') sound.play('gong');
+  else if (performance.now() - lastBlip > 1500) {
+    lastBlip = performance.now();
+    sound.play('blip');
+  }
 }
 
 // ------------------------------------------------------------------ global touch: poke the bot, swipe views
@@ -673,7 +774,11 @@ document.addEventListener('pointerdown', (e) => {
   enterFullscreen();
   touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
   showDock(true);
-  if (bot.hit(e.clientX, e.clientY)) bot.poke();
+  sound.unlock();
+  if (bot.hit(e.clientX, e.clientY)) {
+    bot.poke();
+    sound.play('giggle');
+  }
 });
 document.addEventListener('pointerup', (e) => {
   if (!touchStart) return;
@@ -722,6 +827,7 @@ function loop(now) {
   document.body.dataset.bg = view === 'media' ? 'media' : view === 'clock' ? 'sleep' : st.scene;
 
   bot.setState(st);
+  sceneSounds(st.scene);
   bot.frame(dt);
   bot.draw();
   viz.update(dt, now / 1000, !!(S.media && S.media.playing));
@@ -735,9 +841,11 @@ function loop(now) {
     renderClock();
     renderBanner(st);
     renderStats(st);
+    syncAudio();
     const ct = document.querySelector('#claude .ct');
     if (ct) ct.textContent = fmtTime((serverNow() - S.claude.since) / 1000);
   }
+  if ($('#dock').classList.contains('show')) renderMeter();
   if (tickMode) setTimeout(() => loop(performance.now()), 16);
   else requestAnimationFrame(loop);
 }
@@ -746,10 +854,11 @@ const tickMode = params.has('tick'); // headless screenshots: drive frames with 
 resize();
 for (let i = 0, n = +params.get('warm') * 60 || 0; i < n; i++) { bot.setState(botState()); bot.frame(1 / 60); }
 renderDock();
+renderToggles();
 renderStatus();
 renderClock();
 if (S.media) renderMediaMeta(true);
 connect();
 requestAnimationFrame(loop);
 if (window.isSecureContext && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-if (params.has('debug')) setInterval(() => { document.body.dataset.debug = JSON.stringify({ view: shownView, W: bot.W, H: bot.H, X: [bot.sp.X.x | 0, bot.sp.X.t | 0], Y: [bot.sp.Y.x | 0, bot.sp.Y.t | 0], S: [+bot.sp.Sc.x.toFixed(2), +bot.sp.Sc.t.toFixed(2)], frames: bot.t.toFixed(2), mode, media: !!S.media, cur: currentView(), auto: autoView() }); }, 300);
+if (params.has('debug')) setInterval(() => { document.body.dataset.debug = JSON.stringify({ view: shownView, W: bot.W, H: bot.H, X: [bot.sp.X.x | 0, bot.sp.X.t | 0], Y: [bot.sp.Y.x | 0, bot.sp.Y.t | 0], S: [+bot.sp.Sc.x.toFixed(2), +bot.sp.Sc.t.toFixed(2)], frames: bot.t.toFixed(2), expr: bot.expr, lid: +bot.sp.lid.x.toFixed(2), lidAng: +bot.sp.lidAng.x.toFixed(2), rgb: [bot.sp.r.x | 0, bot.sp.g.x | 0, bot.sp.b.x | 0], mode, media: !!S.media, cur: currentView(), auto: autoView() }); }, 300);

@@ -4,6 +4,9 @@
   "clock24": false,
   "calendar": true,
   "liveAudio": false,
+  "quietHours": [23, 8],
+  "sound": { "volume": 0.6 },
+  "mic": { "sensitivity": 0.5 },
   "idle": { "bored": 90, "sleep": 300 },
 
   "rules": [

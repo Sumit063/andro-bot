@@ -171,6 +171,20 @@ body[data-view="bot"] #v-bot, body[data-view="clock"] #v-clock, body[data-view="
 .claude.done { background: rgba(60, 230, 140, .12); border-color: rgba(60, 230, 140, .35); color: #9FF5C8; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes nudge { 50% { transform: translateY(-4px); } }
+/* shouting reaction */
+#flash { position: fixed; inset: 0; pointer-events: none; z-index: 4; opacity: 0; background: radial-gradient(70% 70% at 50% 50%, transparent 45%, rgba(232, 56, 79, .38)); }
+body.angry #flash { animation: flashRed 1s ease-out 3; }
+@keyframes flashRed { 0% { opacity: 1; } 100% { opacity: 0; } }
+.wakehint { position: absolute; left: 50%; bottom: calc(var(--u) * 11); transform: translateX(-50%); padding: .55em 1.2em; border-radius: 999px; font-size: calc(var(--u) * 1.5); color: var(--muted); background: rgba(16, 20, 34, .9); border: 1px solid var(--line); animation: pulse 2.4s ease-in-out infinite; pointer-events: none; }
+.dock .sep { width: 1px; height: calc(var(--u) * 3); background: var(--line); margin: 0 calc(var(--u) * .4); }
+.dock [data-toggle] { position: relative; }
+.dock [data-toggle]:not(.on) svg { opacity: .45; }
+.dock [data-toggle]:not(.on) span { text-decoration: line-through; }
+.meter { display: none; position: relative; width: calc(var(--u) * 6); height: calc(var(--u) * .7); border-radius: 9px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.dock [data-toggle="mic"].on.live .meter { display: block; }
+.meter b { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #5CF0A0; transform-origin: left; transform: scaleX(0); }
+.meter em { position: absolute; top: 0; bottom: 0; width: 2px; background: #FF6B6B; }
+
 /* mini player: always-reachable controls when something is playing or paused */
 .mini { position: absolute; right: calc(var(--u) * 3.4); bottom: calc(var(--u) * 3); display: flex; align-items: center; gap: calc(var(--u) * 1.2); max-width: calc(var(--u) * 34); padding: calc(var(--u) * .7) calc(var(--u) * 1.6) calc(var(--u) * .7) calc(var(--u) * .7); border-radius: 999px; background: rgba(16, 20, 34, .92); border: 1px solid var(--line); transition: transform .12s var(--ease); }
 .mini.down { transform: scale(.97); }
