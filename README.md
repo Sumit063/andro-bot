@@ -35,7 +35,7 @@ cp config.example.json config.json   # then edit name, location, rules
 ```
 
 On the tablet, open the printed URL (e.g. `http://192.168.1.20:8765`) in Chrome and tap once to go
-full screen. Optional: Android Developer Options → **Stay awake** (while charging) keeps the screen on.
+full screen. Full tablet guide: [docs/android-setup.md](docs/android-setup.md). Optional: Android Developer Options → **Stay awake** (while charging) keeps the screen on.
 
 ### macOS permissions (one-time)
 
@@ -103,9 +103,11 @@ The mic is optional and needs one browser setting, because Chrome only allows th
 2. Enter your hub's address, e.g. `http://192.168.1.20:8765`, set it to **Enabled**, relaunch Chrome
 3. Open the page, tap once, and allow the microphone when asked
 
+Full step-by-step guide, troubleshooting and tuning: **[docs/android-setup.md](docs/android-setup.md)**.
+
 How it decides someone is shouting: it measures loudness and how voice-like the sound is, learns
-your room's normal noise level, and only reacts to voice-range sound that stays loud for about half a
-second (claps and door slams are ignored). It is less sensitive while the Mac is playing media,
+your room's normal noise level, and only reacts to voice-range sound that stays loud for about 0.6
+seconds (claps and door slams are ignored). It is less sensitive while the Mac is playing media,
 ignores its own sounds, and won't react more than once every 40 s. **Audio is analysed in memory
 only; nothing is recorded, stored or sent.** Android shows its green mic indicator while listening.
 
@@ -150,7 +152,8 @@ config.example.json  Default settings & site/app rules
 docs/                Architecture notes
 ```
 
-See **[docs/architecture.md](docs/architecture.md)** for how it all fits together.
+See **[docs/architecture.md](docs/architecture.md)** for how it all fits together and
+**[docs/android-setup.md](docs/android-setup.md)** for the tablet setup.
 
 ## Troubleshooting
 

@@ -85,13 +85,14 @@ export class Ears {
     else this.floor += 0.02;
 
     const s = this.sensitivity;
-    this.threshold = Math.max(this.floor + (32 - 20 * s), -12 - 20 * s) + (this.strict ? 9 : 0);
+    // Normal talking a metre away sits around -35…-20 dBFS on tablet mics; shouting is well above.
+    this.threshold = Math.max(this.floor + (38 - 20 * s), -6 - 20 * s) + (this.strict ? 9 : 0);
     const hearingItself = performance.now() < this.sound.busyUntil;
     const loud = !hearingItself && db > this.threshold && voiceRatio > 0.5;
 
-    // Must stay loud for ~0.5 s (door slams and claps are too short), brief dips allowed.
+    // Must stay loud for ~0.6 s (door slams and claps are too short), brief dips allowed.
     this.score = loud ? this.score + 1 : Math.max(0, this.score - 0.5);
-    if (this.score >= 9 && performance.now() - this.lastShout > this.cooldown) {
+    if (this.score >= 12 && performance.now() - this.lastShout > this.cooldown) {
       this.lastShout = performance.now();
       this.score = 0;
       if (this.onShout) this.onShout(db);
