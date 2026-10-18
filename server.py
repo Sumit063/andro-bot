@@ -161,6 +161,7 @@ class Hub:
         self.vol_quiet_until = 0
         self.claude = {"state": "idle", "since": now_ms()}
         self.calendar = None
+        self.audio_proc = None
 
     # ---- state plumbing
     def snapshot(self):
@@ -207,6 +208,8 @@ class Hub:
             if self.load_config():
                 self.patch("config", self.public_config())
                 self.recompute_activity()
+                if not self.live_audio() and self.audio_proc and self.audio_proc.returncode is None:
+                    self.audio_proc.terminate()  # stop screen capture immediately
 
     # ---- activity (what the bot reacts to)
     def recompute_activity(self):
@@ -416,15 +419,26 @@ class Hub:
             if not m.get("ok"):
                 log("audio:", m.get("err"))
 
+    def live_audio(self):
+        # Live audio uses ScreenCaptureKit: it shows the "screen is being recorded" indicator and makes
+        # DRM video (Netflix, Prime, Hotstar…) go black, so it is opt-in.
+        return bool(self.config.get("liveAudio", False))
+
     async def helper_loop(self, mode, handler):
         backoff = 2
         while True:
+            if mode == "audio" and not self.live_audio():
+                self.set_perm("audio", None)
+                await asyncio.sleep(2)
+                continue
             if not os.path.exists(HELPER):
                 log("helper missing — run helper/build.sh")
                 await asyncio.sleep(30)
                 continue
             started = time.time()
             proc = await asyncio.create_subprocess_exec(HELPER, mode, stdout=PIPE, stderr=DEVNULL)
+            if mode == "audio":
+                self.audio_proc = proc
             async for raw in proc.stdout:
                 handler(raw.decode("utf-8", "replace").strip())
             await proc.wait()

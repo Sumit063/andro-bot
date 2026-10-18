@@ -30,7 +30,7 @@ One binary, three modes, each writing one line per event to stdout:
 | Mode | Source | Output |
 |---|---|---|
 | `events` | `NSWorkspace` activation notifications (instant app switches), `NSAppleScript` reading the browser's active tab every 0.5 s, `CGEventSource` idle time, a listen-only `CGEventTap` (key/click *counts* only), `host_statistics` CPU, IOKit battery | JSON lines; bare `k` / `c` for a key press / click |
-| `audio` | `ScreenCaptureKit` system-audio capture → mono → Hann window → 2048-point FFT (Accelerate) → 40 log-spaced bands with tilt, auto-gain and a bass-onset beat detector | `A<hex>`: `[level, beat, band0…band39]` |
+| `audio` (opt-in: `liveAudio`) | `ScreenCaptureKit` system-audio capture → mono → Hann window → 2048-point FFT (Accelerate) → 40 log-spaced bands with tilt, auto-gain and a bass-onset beat detector | `A<hex>`: `[level, beat, band0…band39]` |
 | `calendar` | EventKit, next 36 h | one JSON line, then exit |
 
 Native code lives here because these APIs (audio capture, event taps, workspace notifications) aren't

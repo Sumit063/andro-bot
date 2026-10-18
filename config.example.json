@@ -3,6 +3,7 @@
   "location": { "name": "London", "lat": 51.5072, "lon": -0.1276 },
   "clock24": false,
   "calendar": true,
+  "liveAudio": false,
   "idle": { "bored": 90, "sleep": 300 },
 
   "rules": [

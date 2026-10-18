@@ -6,7 +6,7 @@ Turn any spare Android tablet (or any device with a modern browser) into a live 
   for LeetCode, grabs popcorn for YouTube/Netflix, types along while you code, dances to your music,
   and falls asleep when you walk away.
 - **A media panel** for whatever is playing on the Mac (YouTube in a browser, Spotify, Apple Music…)
-  with artwork, a seek bar, play/pause/skip, volume, and a **real equalizer** driven by the Mac's audio.
+  with artwork, a seek bar, play/pause/skip, volume, and an animated equalizer (optionally driven by the Mac's real audio).
 - **A clock** with local weather, air quality and your next calendar event.
 
 Everything runs on your own network. Nothing to install on the tablet; it's a web app.
@@ -42,7 +42,7 @@ the feature quietly degrades without it (the tablet's dock shows a hint for anyt
 
 | Permission (System Settings → Privacy & Security) | Unlocks |
 |---|---|
-| Screen & System Audio Recording → Terminal | Real equalizer + beat-synced dancing (otherwise simulated) |
+| Screen & System Audio Recording → Terminal | Only if you set `"liveAudio": true` (see below) |
 | Automation → Terminal → Google Chrome / Safari | Site-based reactions (LeetCode, Netflix, …) |
 | Input Monitoring → Terminal | Typing reactions (counts key presses only, never which key) |
 | Calendars | Next event on the clock |
@@ -66,6 +66,7 @@ Changes are picked up within 2 seconds, no restart needed.
   "location": { "name": "London", "lat": 51.5, "lon": -0.13 },  // weather + AQI (Open-Meteo, no key)
   "clock24": false,
   "calendar": true,
+  "liveAudio": false,                                 // real-audio equalizer (see note below)
   "idle": { "bored": 90, "sleep": 300 },              // seconds
   "rules": [                                          // first match wins
     { "sites": ["leetcode.com"], "scene": "focus", "label": "LeetCode" },
@@ -80,6 +81,10 @@ Changes are picked up within 2 seconds, no restart needed.
 - **Scenes:** `focus`, `funtime`, `surf`, `code`, `music`, `chat`, `default`. Sleep, bored, CPU-stress,
   low-battery and Claude Code states are layered on automatically.
 - Optional `"dpr": 1` lowers canvas resolution on very slow tablets.
+- **`liveAudio`** (default `false`): captures system audio through ScreenCaptureKit so the equalizer
+  and the bot's dancing follow the real sound. macOS treats this as screen recording: it shows the
+  recording indicator, and DRM video (Netflix, Prime Video, Disney+/Hotstar…) plays black while it's on.
+  With it off, the equalizer animates on its own while something plays and media controls work the same.
 
 ## Using it
 
@@ -124,7 +129,8 @@ See **[docs/architecture.md](docs/architecture.md)** for how it all fits togethe
 - **Tablet stuck on "Connecting to your Mac…"** → same Wi‑Fi? Allow incoming connections for Python
   in the macOS firewall; check the IP printed by `start.sh`.
 - **No media info** → `media-control test` must exit 0; something must be playing.
-- **Equalizer is simulated** → grant Screen & System Audio Recording, then restart `start.sh`.
+- **Want the equalizer to follow real audio?** → set `"liveAudio": true` and grant Screen & System Audio Recording.
+- **Netflix/Prime shows a black screen or a "screen is being recorded" icon** → set `"liveAudio": false`.
 - **Site reactions not working** → allow Automation for your browser; Firefox isn't scriptable.
 - **Mac IP changes** → reserve a DHCP address for the Mac in your router.
 
