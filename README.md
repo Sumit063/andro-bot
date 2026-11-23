@@ -175,3 +175,7 @@ and control playback/volume. Fine for a home network; don't run it on untrusted 
 - Font: [Outfit](https://fonts.google.com/specimen/Outfit) (SIL Open Font License 1.1)
 - Weather & air quality: [Open-Meteo](https://open-meteo.com) (free, no API key)
 - Now Playing access: [media-control](https://github.com/ungive/media-control)
+
+---
+
+Built by **[Sumit Pandey](https://sumitpandey.online)** · [GitHub](https://github.com/Sumit063) · [LinkedIn](https://www.linkedin.com/in/sumit063)
